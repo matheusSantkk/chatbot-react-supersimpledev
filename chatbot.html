@@ -2,6 +2,78 @@
 <html>
   <head>
     <title>ChatBot</title>
+    <style>
+      body {
+        font-family: Arial, Helvetica, sans-serif;
+        margin-top: 0px;
+        margin-bottom: 0px;
+      }
+
+      .send-button {
+        background-color: rgb(25, 135, 84);
+        color: white;
+        padding: 12px 20px;
+        margin-left: 10px;
+        border: none;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: bold;
+        cursor: pointer;
+      }
+
+      .chat-input {
+        padding: 12px 15px;
+        border-radius: 10px;
+        border-width: 1px;
+        font-size: 15px;
+        flex-grow: 1;
+      }
+
+      .chat-input-container {
+        display: flex;
+        margin-bottom: 60px;
+      }
+
+      .app-container {
+        max-width: 600px;
+        margin: 0px auto;
+        height: 100vh;
+        display: flex;
+        flex-direction: column;
+      }
+
+      .chat-message-user {
+        display: flex;
+        justify-content: end;
+        align-items: start;
+      }
+
+      .chat-message-robot {
+        display: flex;
+        align-items: start;
+      }
+
+      .chat-message-text {
+        background-color: rgb(238, 238, 238);
+        padding: 15px 20px;
+        border-radius: 10px;
+        margin-right: 10px;
+        margin-left: 10px;
+        margin-bottom: 20px;
+        max-width: 300px;
+      }
+
+      .chat-message-profile {
+        width: 45px;
+      }
+
+      .chat-messages-container {
+        flex-grow: 1;
+        margin-top: 20px;
+        overflow: scroll;
+        scrollbar-width: none;
+      }
+    </style>
   </head>
 
   <body>
@@ -16,12 +88,20 @@
     <script type="text/babel">
       function ChatInput({ chatMessages, setChatMessages }) {
         const [inputText, setInputText] = React.useState("");
+        const [isLoading, setIsLoading] = React.useState(false);
 
         function saveInputText({ target }) {
           setInputText(target.value);
         }
 
-        function sendMessage() {
+        async function sendMessage() {
+          if (isLoading || inputText === "") {
+            return;
+          }
+          setIsLoading(true);
+
+          setInputText("");
+
           const newChatMessages = [
             ...chatMessages,
             {
@@ -31,9 +111,16 @@
             },
           ];
 
-          setChatMessages(newChatMessages);
+          setChatMessages([
+            ...newChatMessages,
+            {
+              message: "Loading...",
+              sender: "robot",
+              key: crypto.randomUUID(),
+            },
+          ]);
 
-          const response = Chatbot.getResponse(inputText);
+          const response = await Chatbot.getResponseAsync(inputText);
           setChatMessages([
             ...newChatMessages,
             {
@@ -43,41 +130,69 @@
             },
           ]);
 
-          setInputText("");
+          setIsLoading(false);
+        }
+
+        function handleKeyDown({ key }) {
+          if (key === "Enter") {
+            sendMessage();
+          } else if (key === "Escape") {
+            setInputText("");
+          }
         }
 
         return (
-          <>
+          <div className="chat-input-container">
             <input
               placeholder="Send a message to Chatbot"
               size="30"
               onChange={saveInputText}
+              onKeyDown={handleKeyDown}
               value={inputText}
+              className="chat-input"
             />
-            <button onClick={sendMessage}> Send</button>
-          </>
+            <button className="send-button" onClick={sendMessage}>
+              Send
+            </button>
+          </div>
         );
       }
 
       function ChatMessage({ message, sender }) {
         return (
-          <div>
-            {sender === "robot" && <img src="img/robot.png" width="50" />}
-            {message}
-            {sender === "user" && <img src="img/user.png" width="50" />}
+          <div
+            className={
+              sender === "user" ? "chat-message-user" : "chat-message-robot"
+            }
+          >
+            {sender === "robot" && (
+              <img src="img/robot.png" className="chat-message-profile" />
+            )}
+            <div className="chat-message-text">{message}</div>
+            {sender === "user" && (
+              <img src="img/user.png" className="chat-message-profile" />
+            )}
           </div>
         );
       }
 
       function ChatMessages({ chatMessages }) {
+        const chatMessagesRef = React.useRef(null);
+        React.useEffect(() => {
+          const containerElem = chatMessagesRef.current
+          if (containerElem) {
+            containerElem.scrollTop = containerElem.scrollHeight
+          }
+        }, [chatMessages]);
+
         return (
-          <>
+          <div className="chat-messages-container" ref={chatMessagesRef}>
             {chatMessages.map(({ key, message, sender }) => {
               return (
                 <ChatMessage key={key} message={message} sender={sender} />
               );
             })}
-          </>
+          </div>
         );
       }
 
@@ -93,26 +208,16 @@
             sender: "robot",
             key: "id2",
           },
-          {
-            message: "can you get me todays date?",
-            sender: "user",
-            key: "id3",
-          },
-          {
-            message: "Today is October 30",
-            sender: "robot",
-            key: "id4",
-          },
         ]);
 
         return (
-          <>
+          <div className="app-container">
+            <ChatMessages chatMessages={chatMessages} />
             <ChatInput
               chatMessages={chatMessages}
               setChatMessages={setChatMessages}
             />
-            <ChatMessages chatMessages={chatMessages} />
-          </>
+          </div>
         );
       }
 
