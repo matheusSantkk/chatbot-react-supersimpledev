@@ -9,6 +9,11 @@
         margin-bottom: 0px;
       }
 
+      .text-empty {
+        color: rgb(170, 170, 170);
+        text-align: center;
+      }
+
       .send-button {
         background-color: rgb(25, 135, 84);
         color: white;
@@ -40,6 +45,12 @@
         height: 100vh;
         display: flex;
         flex-direction: column;
+      }
+
+      .loading-gif-image {
+        width: 45px;
+        height: 45px;
+        margin: -10px;
       }
 
       .chat-message-user {
@@ -114,7 +125,7 @@
           setChatMessages([
             ...newChatMessages,
             {
-              message: "Loading...",
+              message: <img className='loading-gif-image' src="img/loading-spinner.gif" alt="loading svg"/>,
               sender: "robot",
               key: crypto.randomUUID(),
             },
@@ -187,6 +198,9 @@
 
         return (
           <div className="chat-messages-container" ref={chatMessagesRef}>
+            <p className="text-empty" >
+              {chatMessages.length === 0 && 'Welcome to the chatbot project! Send a message using the textbox bellow.'}
+              </p>
             {chatMessages.map(({ key, message, sender }) => {
               return (
                 <ChatMessage key={key} message={message} sender={sender} />
@@ -197,18 +211,7 @@
       }
 
       function App() {
-        const [chatMessages, setChatMessages] = React.useState([
-          {
-            message: "Hello Chatbot",
-            sender: "user",
-            key: "id1",
-          },
-          {
-            message: "Hello! How I can help you?",
-            sender: "robot",
-            key: "id2",
-          },
-        ]);
+        const [chatMessages, setChatMessages] = React.useState([]);
 
         return (
           <div className="app-container">
